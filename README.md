@@ -15,39 +15,34 @@
    target_include_directories(yourTarget PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/submodules")
    target_link_libraries(yourTarget PRIVATE qt-desktop-background-window)
    ```
-3. 继承`h::FramelessWindow`，进行少量配置即可，参考代码如下
+3. 编写少量代码即可，核心参考代码如下
     ```c++
-    #include <QApplication>
-    #include <QStyle>
-    #include "samplewindow.h"
+    // 初始化
+    h::DesktopBackgroundWindowManager::initialize();
+    auto dbwm = h::DesktopBackgroundWindowManager::singleton();
 
-    #include <qt-desktop-background-window/desktopbackgroundwindow.h>
-    
-    SampleWindow::SampleWindow()
-        : FramelessWindow{}
-    {
-      // 初始化
-      h::DesktopBackgroundWindowManager::initialize();
-      auto dbwm = h::DesktopBackgroundWindowManager::singleton();
-  
-      // 支持多屏幕，给每个屏幕设置壁纸
-      auto screens = dbwm->screens();
-      for(const auto &screen : screens){
-          QLabel *label = new QLabel(nullptr);
-          label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  
-          // 将label设置为背景widget
-          dbwm->setScreenBackgroundWidget(screen, label);
-  
-          // 1、 加载静态图片
-          // label->setPixmap(QPixmap(":/images/robot.jpg").scaled(label->size(), Qt::IgnoreAspectRatio));
-  
-          // 2、 加载动图
-          QMovie *movie = new QMovie(":/images/rainbowCat.gif");
-          movie->setScaledSize(label->size());
-          label->setMovie(movie);
-          movie->start();
-      }
+    // 支持多屏幕，给每个屏幕设置壁纸，当然，你也可以修改，给每个屏幕设置不一样的壁纸
+    auto screens = dbwm->screens();
+    for(const auto &screen : screens){
+        /*
+         * 当前版本，建议使用下面的顺序来创建。
+         * 因为调用 void DesktopBackgroundWindowManager::setScreenBackgroundWidget(QScreen *toScreen, QWidget *w);
+         * 这个函数之后，框架会把w指向的QWidget的size设置成与其相应的屏幕大小。
+         * 这个时候向w内填充其他控件，能更好地匹配size
+        */
+
+        // 第一步，创建一个QWidget，是任意你想显示的内容
+        QLabel *label = new QLabel(nullptr);
+        label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+        // 第二步，将其设置为背景widget
+        dbwm->setScreenBackgroundWidget(screen, label);
+
+        // 第三步，初始化你的背景widget
+        QMovie *movie = new QMovie(":/images/rainbowCat.gif");
+        movie->setScaledSize(label->size());
+        label->setMovie(movie);
+        movie->start();
     }
     ```
     
