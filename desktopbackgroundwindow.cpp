@@ -30,6 +30,20 @@ void DesktopBackgroundWindowManager::setScreenBackgroundWidget(QScreen *toScreen
     bgw->setVisible(!!w);
 }
 
+void DesktopBackgroundWindowManager::prepareExit(){
+    for(auto it = m_backgroundWindows.begin(); it != m_backgroundWindows.end(); ++it){
+        it.value()->hide();
+        it.value()->deleteLater();
+    }
+    m_backgroundWindows.clear();
+
+    // 目前没有找到一个更好的办法，窗口关闭后，壁纸层不会还原为之前的壁纸。
+    QSettings setting("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
+    QString src = setting.value("WallPaper").toString();
+    TCHAR *ptch = (wchar_t*) src.utf16();
+    SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, ptch, 0);
+}
+
 DesktopBackgroundWindowManager::DesktopBackgroundWindowManager(QObject *parent)
     : QObject{parent}
 {
@@ -58,15 +72,6 @@ DesktopBackgroundWindowManager::DesktopBackgroundWindowManager(QObject *parent)
     QObject::connect(qApp, &QGuiApplication::screenAdded, this, &DesktopBackgroundWindowManager::onScreenAdded);
     QObject::connect(qApp, &QGuiApplication::screenRemoved, this, &DesktopBackgroundWindowManager::onScreenRemoved);
     QObject::connect(qApp, &QGuiApplication::primaryScreenChanged, this, &DesktopBackgroundWindowManager::onPrimaryScreenChanged);
-
-    QObject::connect(qApp, &QGuiApplication::aboutToQuit, this, [this](){
-        // 目前没有找到一个更好的办法，窗口关闭后，壁纸层不会还原为之前的壁纸。
-        QSettings setting("HKEY_CURRENT_USER\\Control Panel\\Desktop", QSettings::NativeFormat);
-        QString src = setting.value("WallPaper").toString();
-        TCHAR *ptch = (TCHAR *)src.toStdWString().c_str();
-        SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, ptch, 0);
-        SystemParametersInfo(SPI_SETDESKWALLPAPER, 0, ptch, 0 );
-    });
 }
 
 DesktopBackgroundWindowManager::~DesktopBackgroundWindowManager(){}

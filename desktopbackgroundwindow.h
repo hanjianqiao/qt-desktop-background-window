@@ -16,6 +16,7 @@ public:
     QList<QScreen*> screens() const;
 
     void setScreenBackgroundWidget(QScreen *toScreen, QWidget *w);
+    void prepareExit();
 
 private:
     DesktopBackgroundWindowManager(QObject *parent);
